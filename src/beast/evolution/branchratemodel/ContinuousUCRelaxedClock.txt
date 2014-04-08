@@ -1,0 +1,231 @@
+package beast.evolution.branchratemodel;
+
+import beast.core.Input;
+import beast.core.parameter.RealParameter;
+import beast.evolution.tree.Node;
+import beast.util.Randomizer;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Jessie Wu
+ * Date: 3/10/13
+ * Time: 2:52 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class ContinuousUCRelaxedClock extends UCRelaxedClockModel {
+    public Input<RealParameter> quantileInput =
+            new Input<RealParameter>(
+                    "quantiles",
+                    "the quantiles of the prior distribution on the rates associated with nodes in the tree for sampling of individual rates among branches.",
+                    Input.Validate.REQUIRED
+            );
+
+    public Input<Double> initialLowerQuantileInput = new Input<Double>(
+            "initialLowerQuantile",
+            "the initial lower bound of the quantiles",
+            0.0
+
+    );
+
+    public Input<Double> initialUpperQuantileInput = new Input<Double>(
+            "initialUpperQuantile",
+            "the initial upper bound of the quantiles",
+            1.0
+
+    );
+
+    RealParameter quantiles;
+    Double[] storedQuantiles;
+    boolean quantileChanged = false;
+
+    public ContinuousUCRelaxedClock(){
+        categoryInput.setRule(Input.Validate.OPTIONAL);
+    }
+
+
+    @Override
+    public void initAndValidate() throws Exception {
+
+        tree = treeInput.get();
+
+        quantiles = quantileInput.get();
+        int nCategoryCount = tree.getNodeCount() - 1;
+        quantiles.setDimension(nCategoryCount);
+        double initialLowerQuantile = initialLowerQuantileInput.get() < 0.0 ? 0.0: initialLowerQuantileInput.get();
+
+        double initialUpperQuantile = initialUpperQuantileInput.get() > 1.0 ? 1.0: initialUpperQuantileInput.get();
+        Double[] quantileValues = new Double[nCategoryCount];
+        for (int i = 0; i < nCategoryCount; i++) {
+            System.out.println(initialLowerQuantile +" "+ initialUpperQuantile);
+            quantileValues[i] = (initialUpperQuantile - initialLowerQuantile)* Randomizer.nextDouble()+initialLowerQuantile;
+            System.out.println(quantileValues[i]);
+        }
+        RealParameter other = new RealParameter(quantileValues);
+        quantiles.assignFromWithoutID(other);
+        quantiles.setLower(0.0);
+        quantiles.setUpper(1.0);
+
+        distribution = rateDistInput.get();
+
+        rates = new double[quantiles.getDimension()];
+        storedRates = new double[quantiles.getDimension()];
+        for (int i = 0; i < rates.length; i++) {
+
+            rates[i] = distribution.inverseCumulativeProbability(quantiles.getValue(i));
+
+        }
+        storedQuantiles = quantiles.getValues();
+
+        System.arraycopy(rates, 0, storedRates, 0, rates.length);
+        normalize = normalizeInput.get();
+
+        meanRate = meanRateInput.get();
+        if (meanRate == null) {
+            meanRate = new RealParameter("1.0");
+        }
+
+        try {
+        	double mean = rateDistInput.get().getMean();
+        	if (Math.abs(mean-1.0) > 1e-6) {
+        		System.out.println("WARNING: mean of distribution for relaxed clock model is not 1.0.");
+        	}
+        } catch (RuntimeException e) {
+			// ignore
+		}
+    }
+
+
+    public double getRateForBranch(Node node) {
+        if (node.isRoot()) {
+            // root has no rate
+            return 1;
+        }
+        if (recompute) {
+
+            prepare();
+            recompute = false;
+        }
+        if (renormalize) {
+            if (normalize) {
+                computeFactor();
+            }
+            renormalize = false;
+        }
+
+        int nodeNumber = node.getNr();
+
+        if (nodeNumber == quantiles.getDimension()) {
+            // root node has nr less than #categories, so use that nr
+            nodeNumber = node.getTree().getRoot().getNr();
+        }
+
+        if(rates[nodeNumber] == 0.0){
+            throw new RuntimeException("");
+        }
+
+        quantileChanged=false;
+
+        return rates[nodeNumber] * scaleFactor * meanRate.getValue();
+    }
+
+    // compute scale factor
+
+    protected void computeFactor() {
+
+        //scale mean rate to 1.0 or separate parameter
+
+        double treeRate = 0.0;
+        double treeTime = 0.0;
+
+        for (int i = 0; i < tree.getNodeCount(); i++) {
+            Node node = tree.getNode(i);
+            if (!node.isRoot()) {
+                int nodeNumber = node.getNr();
+                if (nodeNumber == quantiles.getDimension()) {
+                    // root node has nr less than #categories, so use that nr
+                    nodeNumber = node.getTree().getRoot().getNr();
+                }
+                //int rateCategory = categories.getValue(nodeNumber);
+                treeRate += rates[nodeNumber] * node.getLength();
+                treeTime += node.getLength();
+
+                //System.out.println("rates and time\t" + rates[rateCategory] + "\t" + node.getLength());
+            }
+        }
+        //treeRate /= treeTime;
+
+        scaleFactor = 1.0 / (treeRate / treeTime);
+
+
+        //System.out.println("scaleFactor\t\t\t\t\t" + scaleFactor);
+    }
+
+    protected void prepare() {
+
+        //System.out.println("prepare");
+
+        //categories = (IntegerParameter) categoryInput.get();
+
+        distribution = rateDistInput.get();
+
+        tree = treeInput.get();
+
+        //rates = new double[quantiles.getDimension()];
+        try {
+            double q;
+            for (int i = 0; i < rates.length; i++) {
+                //System.out.println("Hi!");
+                q = quantiles.getValue(i);
+                //System.out.println(storedQuantiles[i] +" "+ q);
+                if(!(storedQuantiles[i] == q && quantileChanged)){
+                    //System.out.println(storedQuantiles[i] +" "+ q);
+                    rates[i] = distribution.inverseCumulativeProbability(q);
+                }
+                //System.out.println(rates[i]);
+            }
+        } catch (Exception e) {
+            // Exception due to distribution not having  inverseCumulativeProbability implemented.
+            // This should already been caught at initAndValidate()
+            e.printStackTrace();
+            System.exit(0);
+        }
+
+        //if (normalize) computeFactor();
+    }
+
+
+    @Override
+    protected boolean requiresRecalculation() {
+        recompute = false;
+        renormalize = true;
+
+//        if (treeInput.get().somethingIsDirty()) {
+//        	recompute = true;
+//            return true;
+//        }
+        // rateDistInput cannot be dirty?!?
+        if (rateDistInput.get().isDirtyCalculation()) {
+            recompute = true;
+            return true;
+        }
+        // NOT processed as trait on the tree, so DO mark as dirty
+        if (quantiles.somethingIsDirty()) {
+            quantileChanged = true;
+            recompute = true;
+            return true;
+        }
+        if (meanRate.somethingIsDirty()) {
+            return true;
+        }
+
+        return recompute;
+    }
+
+
+
+    public void accept(){
+        storedQuantiles = quantiles.getValues();
+        super.accept();
+
+    }
+}

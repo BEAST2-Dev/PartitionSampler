@@ -1,0 +1,208 @@
+package beast.evolution.operators;
+
+import beast.core.Input;
+import beast.core.parameter.RealParameter;
+import beast.evolution.branchratemodel.QuantileUCRelaxedClock;
+import beast.evolution.tree.Node;
+import beast.evolution.tree.Tree;
+import beast.util.Randomizer;
+import org.apache.commons.math.MathException;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: cwu080
+ * Date: 4/10/13
+ * Time: 3:43 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class BranchRateWilsonBalding extends TreeOperator {
+    public Input<RealParameter> quantilesInput = new Input<RealParameter>(
+            "quantiles",
+            "the quantiles of the prior distribution on the rates associated with nodes in the tree for sampling of individual rates among branches.",
+            Input.Validate.REQUIRED
+    );
+    public Input<QuantileUCRelaxedClock> quantileUCRelaxedClockInput = new Input<QuantileUCRelaxedClock>(
+            "quantileUCRelaxedClock",
+            "The relaxed clock used to model temporal heterogeneity in rates.",
+            Input.Validate.REQUIRED
+    );
+
+    private RealParameter quantiles;
+    private QuantileUCRelaxedClock quantileUCRelaxedClock;
+    public void initAndValidate(){
+        quantiles = quantilesInput.get();
+        quantileUCRelaxedClock = quantileUCRelaxedClockInput.get();
+
+
+    }
+
+    /**
+     * WARNING: Assumes strictly bifurcating beast.tree.
+     */
+    /**
+     * override this for proposals,
+     *
+     * @return log of Hastings Ratio, or Double.NEGATIVE_INFINITY if proposal should not be accepted *
+     */
+    @Override
+    public double proposal() {
+        try{
+            Tree tree = m_tree.get(this);
+
+            double oldMinAge, newMinAge, newRange, oldRange, newAge, fHastingsRatio;
+
+            // choose a random node avoiding root
+            final int nodeCount = tree.getNodeCount();
+            Node i;
+            do {
+                i = tree.getNode(Randomizer.nextInt(nodeCount));
+            } while (i.isRoot());
+            Node iP = i.getParent();
+
+            // choose another random node to insert i above
+            Node j;
+            Node jP;
+
+            // make sure that the target branch <k, j> is above the subtree being moved
+            do {
+                j = tree.getNode(Randomizer.nextInt(nodeCount));
+                jP = j.getParent();
+            } while ((jP != null && jP.getHeight() <= i.getHeight()) || (i.getNr() == j.getNr()));
+
+            // disallow moves that change the root.
+            if (j.isRoot() || iP.isRoot()) {
+                return Double.NEGATIVE_INFINITY;
+            }
+
+            if (jP.getNr() == iP.getNr() || j.getNr() == iP.getNr() || jP.getNr() == i.getNr())
+                return Double.NEGATIVE_INFINITY;
+
+            final Node CiP = getOtherChild(iP, i);
+
+            Node PiP = iP.getParent();
+
+            newMinAge = Math.max(i.getHeight(), j.getHeight());
+            newRange = jP.getHeight() - newMinAge;
+            newAge = newMinAge + (Randomizer.nextDouble() * newRange);
+            oldMinAge = Math.max(i.getHeight(), CiP.getHeight());
+            oldRange = PiP.getHeight() - oldMinAge;
+            fHastingsRatio = newRange / Math.abs(oldRange);
+
+            if (oldRange == 0 || newRange == 0) {
+                // This happens when some branch lengths are zero.
+                // If oldRange = 0, fHastingsRatio == Double.POSITIVE_INFINITY and
+                // node i can be catapulted anywhere in the tree, resulting in
+                // very bad trees that are always accepted.
+                // For symmetry, newRange = 0 should therefore be ruled out as well
+                return Double.NEGATIVE_INFINITY;
+            }
+            //System.out.println(getID()+":");
+            //update
+            if (j.isRoot()) {
+                //System.out.println("What?! ");
+
+
+                // 1. remove edges <iP, CiP>
+                // 2. add edges <k, iP>, <iP, j>, <PiP, CiP>
+
+                replace(iP, CiP, j);
+                replace(PiP, iP, CiP);
+
+                // iP is the new root
+                iP.setParent(null);
+                tree.setRoot(iP);
+
+            } else if (iP.isRoot()) {
+                // 1. remove edges <k, j>, <iP, CiP>, <PiP, iP>
+                // 2. add edges <k, iP>, <iP, j>, <PiP, CiP>
+
+                double oldiSubst = i.getLength()*quantileUCRelaxedClock.getRawRateForBranch(i);
+                double oldjPSubst = jP.getLength()*quantileUCRelaxedClock.getRawRateForBranch(jP);
+                double oldjSubst = j.getLength()*quantileUCRelaxedClock.getRawRateForBranch(j);
+
+                replace(jP, j, iP);
+                //replace(iP, CiP, iP);
+                replace(iP, CiP, j);
+
+                // CiP is the new root
+                CiP.setParent(null);
+                tree.setRoot(CiP);
+
+                iP.setHeight(newAge);
+
+                if(iP.getNr() != (tree.getNodeCount() - 1) && CiP.getNr() != (tree.getNodeCount() - 1)){
+                    double temp = quantiles.getValue(iP.getNr());
+                    quantiles.setValue(iP.getNr(),quantiles.getValue(CiP.getNr()));
+                    quantiles.setValue(CiP.getNr(),temp);
+                }
+
+
+
+                double newiRate = oldiSubst/i.getLength();
+                //double prop = Randomizer.nextDouble();
+                double newiPRate = oldjPSubst/iP.getLength();
+                double newjRate = (oldjSubst+oldjPSubst+oldiSubst)/j.getLength();
+
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(i),
+                        quantileUCRelaxedClock.getQuantile(newiRate)
+                );
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(iP),
+                        quantileUCRelaxedClock.getQuantile(newiPRate)
+                );
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(j),
+                        quantileUCRelaxedClock.getQuantile(newjRate)
+                );
+
+            } else {
+                double oldiSubst = i.getLength()*quantileUCRelaxedClock.getRawRateForBranch(i);
+                double oldCiPSubst = CiP.getLength()*quantileUCRelaxedClock.getRawRateForBranch(CiP);
+                double oldiPSubst = iP.getLength()*quantileUCRelaxedClock.getRawRateForBranch(iP);
+                double oldjSubst = j.getLength()*quantileUCRelaxedClock.getRawRateForBranch(j);
+
+                // 1. remove edges <k, j>, <iP, CiP>, <PiP, iP>
+                // 2. add edges <k, iP>, <iP, j>, <PiP, CiP>
+
+                // disconnect iP
+                replace(iP.getParent(), iP, CiP);
+                // re-attach, first child node to iP
+                replace(iP, CiP, j);
+                // then parent node of j to iP
+                replace(jP, j, iP);
+                iP.setHeight(newAge);
+
+                double newCiPRate = (oldCiPSubst+oldiPSubst)/CiP.getLength();
+                double newiRate = oldiSubst/i.getLength();
+                double prop = Randomizer.nextDouble();
+                double newiPRate = oldjSubst*prop/iP.getLength();
+                double newjRate = oldjSubst*(1.0-prop)/j.getLength();
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(CiP),
+                        quantileUCRelaxedClock.getQuantile(newCiPRate)
+                );
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(i),
+                        quantileUCRelaxedClock.getQuantile(newiRate)
+                );
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(iP),
+                        quantileUCRelaxedClock.getQuantile(newiPRate)
+                );
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(j),
+                        quantileUCRelaxedClock.getQuantile(newjRate)
+                );
+
+            }
+
+
+
+            return Math.log(fHastingsRatio);
+        }catch(MathException e){
+            return Double.NEGATIVE_INFINITY;
+
+        }
+    }
+}

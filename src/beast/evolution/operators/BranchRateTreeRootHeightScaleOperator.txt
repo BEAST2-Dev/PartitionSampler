@@ -1,0 +1,146 @@
+package beast.evolution.operators;
+
+import beast.core.Input;
+import beast.core.Operator;
+import beast.core.parameter.BooleanParameter;
+import beast.core.parameter.RealParameter;
+import beast.evolution.branchratemodel.QuantileUCRelaxedClock;
+import beast.evolution.tree.Node;
+import beast.evolution.tree.Tree;
+import beast.util.Randomizer;
+import org.apache.commons.math.MathException;
+
+import java.text.DecimalFormat;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Jessie Wu
+ * Date: 7/10/13
+ * Time: 6:13 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class BranchRateTreeRootHeightScaleOperator extends Operator{
+    public final Input<Tree> treeInput = new Input<Tree>(
+            "tree",
+            "if specified, all beast.tree branch length are scaled",
+            Input.Validate.REQUIRED
+    );
+
+
+        public final Input<Double> scaleFactorInput =
+                new Input<Double>(
+                "scaleFactor",
+                "scaling factor: larger means more bold proposals",
+                1.0
+        );
+
+
+        public Input<Boolean> optimiseInput = new Input<Boolean>(
+                "optimise",
+                "flag to indicate that the scale factor is automatically changed in order to achieve a good acceptance rate (default true)",
+                true
+        );
+
+    public Input<RealParameter> quantilesInput = new Input<RealParameter>(
+            "quantiles",
+            "the quantiles of the prior distribution on the rates associated with nodes in the tree for sampling of individual rates among branches.",
+            Input.Validate.REQUIRED
+    );
+    public Input<QuantileUCRelaxedClock> quantileUCRelaxedClockInput = new Input<QuantileUCRelaxedClock>(
+            "quantileUCRelaxedClock",
+            "The relaxed clock used to model temporal heterogeneity in rates.",
+            Input.Validate.REQUIRED
+    );
+
+    private RealParameter quantiles;
+    private QuantileUCRelaxedClock quantileUCRelaxedClock;
+
+
+    /**
+     * shadows input *
+     */
+    double scaleFactor;
+    Tree tree ;
+
+
+
+    @Override
+    public void initAndValidate() throws Exception {
+        scaleFactor = scaleFactorInput.get();
+        tree = treeInput.get();
+        quantiles = quantilesInput.get();
+        quantileUCRelaxedClock = quantileUCRelaxedClockInput.get();
+    }
+
+    protected boolean outsideBounds(double value, RealParameter param) {
+        final Double l = param.getLower();
+        final Double h = param.getUpper();
+
+        return (value < l || value > h);
+        //return (l != null && value < l || h != null && value > h);
+    }
+
+    protected  double getScaler() {
+        return (scaleFactor + (Randomizer.nextDouble() * ((1.0 / scaleFactor) - scaleFactor)));
+    }
+
+    @Override
+    public double proposal() {
+        try{
+            double hastingsRatio;
+            final double scale = getScaler();
+
+            Node root = tree.getRoot();
+            Node left = root.getLeft();
+            Node right = root.getRight();
+            double fNewHeight = root.getHeight() * scale;
+            double substToLeftChild = left.getLength()*quantileUCRelaxedClock.getRawRateForBranch(left);
+            double substToRightChild = right.getLength()*quantileUCRelaxedClock.getRawRateForBranch(right);
+
+
+            if (fNewHeight < Math.max(root.getLeft().getHeight(), root.getRight().getHeight())) {
+                return Double.NEGATIVE_INFINITY;
+            }
+            root.setHeight(fNewHeight);
+            quantiles.setValue(
+                    quantileUCRelaxedClock.getQuantileIndex(left),
+                    quantileUCRelaxedClock.getQuantile(substToLeftChild/left.getLength())
+            );
+
+            quantiles.setValue(
+                    quantileUCRelaxedClock.getQuantileIndex(right),
+                    quantileUCRelaxedClock.getQuantile(substToRightChild/right.getLength())
+            );
+
+            return -Math.log(scale);
+        }catch(MathException e){
+            return Double.NEGATIVE_INFINITY;
+        }
+
+    }
+
+
+
+@Override
+    public String getPerformanceSuggestion() {
+        double prob = m_nNrAccepted / (m_nNrAccepted + m_nNrRejected + 0.0);
+        double targetProb = getTargetAcceptanceProbability();
+
+        double ratio = prob / targetProb;
+        if (ratio > 2.0) ratio = 2.0;
+        if (ratio < 0.5) ratio = 0.5;
+
+        // new scale factor
+        final double sf = Math.pow(scaleFactor, ratio);
+
+        final DecimalFormat formatter = new DecimalFormat("#.###");
+        if (prob < 0.10) {
+            return "Try setting scaleFactor to about " + formatter.format(sf);
+        } else if (prob > 0.40) {
+            return "Try setting scaleFactor to about " + formatter.format(sf);
+        } else return "";
+    }
+
+
+
+}

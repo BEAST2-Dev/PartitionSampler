@@ -1,0 +1,137 @@
+package beast.evolution.operators;
+
+import beast.core.Input;
+import beast.core.parameter.RealParameter;
+import beast.evolution.branchratemodel.QuantileUCRelaxedClock;
+import beast.evolution.tree.Node;
+import beast.evolution.tree.Tree;
+
+import beast.math.distributions.BetaDistribution;
+import beast.util.Randomizer;
+import org.apache.commons.math.MathException;
+
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: cwu080
+ * Date: 4/10/13
+ * Time: 7:43 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class BranchRateUniform extends TreeOperator {
+    public Input<RealParameter> quantilesInput = new Input<RealParameter>(
+            "quantiles",
+            "the quantiles of the prior distribution on the rates associated with nodes in the tree for sampling of individual rates among branches.",
+            Input.Validate.REQUIRED
+    );
+    public Input<QuantileUCRelaxedClock> quantileUCRelaxedClockInput = new Input<QuantileUCRelaxedClock>(
+            "quantileUCRelaxedClock",
+            "The relaxed clock used to model temporal heterogeneity in rates.",
+            Input.Validate.REQUIRED
+    );
+
+    private RealParameter quantiles;
+    private QuantileUCRelaxedClock quantileUCRelaxedClock;
+    public void initAndValidate() throws Exception{
+        quantiles = quantilesInput.get();
+        quantileUCRelaxedClock = quantileUCRelaxedClockInput.get();
+
+    }
+
+    /**
+     * change the parameter and return the hastings ratio.
+     *
+     * @return log of Hastings Ratio, or Double.NEGATIVE_INFINITY if proposal should not be accepted *
+     */
+    @Override
+    public double proposal() {
+        try{
+            final Tree tree = m_tree.get(this);
+
+            // randomly select internal node
+            final int nNodeCount = tree.getNodeCount();
+            Node node;
+            do {
+                final int iNodeNr = nNodeCount / 2 + 1 + Randomizer.nextInt(nNodeCount / 2);
+                node = tree.getNode(iNodeNr);
+            } while (node.isRoot() || node.isLeaf());
+            final double fUpper = node.getParent().getHeight();
+            final double fLower = Math.max(node.getLeft().getHeight(), node.getRight().getHeight());
+            final double newValue = (BetaDistribution.nextBetaScale(0.5,0.5, 2) * (fUpper - fLower)) + fLower;
+
+            double substToParent = node.getLength()*quantileUCRelaxedClock.getRawRateForBranch(node);
+            double substToLeftChild = node.getLeft().getLength()*quantileUCRelaxedClock.getRawRateForBranch(node.getLeft());
+            double substToRightChild = node.getRight().getLength()*quantileUCRelaxedClock.getRawRateForBranch(node.getRight());
+
+            double oldiQ = quantiles.getValue(quantileUCRelaxedClock.getQuantileIndex(node));
+            double oldiLeft = quantiles.getValue(quantileUCRelaxedClock.getQuantileIndex(node.getLeft()));
+            double oldiRight = quantiles.getValue(quantileUCRelaxedClock.getQuantileIndex(node.getRight()));
+            double logq = 0.;
+
+            //System.out.println(oldiQ+" "+oldiLeft+" "+oldiRight);
+            //System.out.println(logq);
+            //logq = Math.log(quantileUCRelaxedClock.getRawRateForBranch(node)+quantileUCRelaxedClock.getRawRateForBranch(node.getLeft())+
+            //        quantileUCRelaxedClock.getRawRateForBranch(node.getRight()));
+
+            //logq += Math.log(node.getLength()* node.getLeft().getLength()*node.getRight().getLength());
+            node.setHeight(newValue);
+            //logq -= Math.log(node.getLength()* node.getLeft().getLength()*node.getRight().getLength());
+
+
+            double newiQ = quantileUCRelaxedClock.getQuantile(substToParent/node.getLength());
+            double newiLeft = quantileUCRelaxedClock.getQuantile(substToLeftChild/node.getLeft().getLength());
+            double newiRight = quantileUCRelaxedClock.getQuantile(substToRightChild/node.getRight().getLength());
+
+            //newiQ = Randomizer.nextDouble();
+            //newiLeft = Randomizer.nextDouble();
+            //newiRight = Randomizer.nextDouble();
+
+            double newiQ2 = BetaDistribution.nextBetaScale(newiQ, 1. - newiQ, 10);
+            double newiLeft2 = BetaDistribution.nextBetaScale(newiLeft, 1. - newiLeft, 10);
+            double newiRight2 = BetaDistribution.nextBetaScale(newiRight, 1. - newiRight, 10);
+
+            logq-=BetaDistribution.logPDF(newiQ2,newiQ,10) + BetaDistribution.logPDF(newiLeft2 ,newiLeft ,10)+BetaDistribution.logPDF(newiRight2,newiRight,10);
+            //System.out.println(logq);
+
+            //logq -= Math.log(substToParent/node.getLength()+substToLeftChild/node.getLeft().getLength()+substToRightChild/node.getRight().getLength());
+            if(newiQ >= 1.0|| newiLeft >= 1.0 || newiRight >= 1.0||
+                    newiQ <= 0.0|| newiLeft <= 0.0 || newiRight <= 0.0)
+                throw new MathException();
+
+
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(node),
+                        newiQ
+                );
+
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(node.getLeft()),
+                        newiLeft
+                );
+
+                quantiles.setValue(
+                        quantileUCRelaxedClock.getQuantileIndex(node.getRight()),
+                        newiRight
+                );
+
+
+            double newSubstToParent = node.getLength()*quantileUCRelaxedClock.getRawRateForBranch(node);
+            double newSubstToLeftChild = node.getLeft().getLength()*quantileUCRelaxedClock.getRawRateForBranch(node.getLeft());
+            double newSubstToRightChild = node.getRight().getLength()*quantileUCRelaxedClock.getRawRateForBranch(node.getRight());
+
+            //System.out.println("flag1: "+logq);
+            double newValue2 = (BetaDistribution.nextBetaScale(0.5,0.5,2) * (fUpper - fLower)) + fLower;
+            double newiQ3 = quantileUCRelaxedClock.getQuantile(newSubstToParent/(fUpper - newValue2));
+            double newiLeft3 = quantileUCRelaxedClock.getQuantile(newSubstToLeftChild/(newValue2 - node.getLeft().getHeight()));
+            double newiRight3 = quantileUCRelaxedClock.getQuantile(newSubstToRightChild/(newValue2 - node.getRight().getHeight()));
+            logq+=BetaDistribution.logPDF(oldiQ, newiQ3, 10) + BetaDistribution.logPDF(oldiLeft, newiLeft3, 10)+BetaDistribution.logPDF(oldiRight, newiRight3, 10);
+
+            //System.out.println("flag2: "+logq);
+            return logq;
+            //return 0.0;
+        }catch(MathException e){
+            return Double.NEGATIVE_INFINITY;
+        }
+    }
+
+}
