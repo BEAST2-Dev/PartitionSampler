@@ -1,11 +1,12 @@
 package beast.evolution.operators;
 
+
 import beast.core.Input;
 import beast.core.Operator;
 import beast.core.parameter.ParameterList;
 import beast.core.parameter.RealParameter;
 import beast.math.distributions.MultivariateNormal;
-import beast.math.matrixAlgebra1.Matrix;
+import beast.math.matrixAlgebra.Matrix;
 
 /**
  * Created by IntelliJ IDEA.

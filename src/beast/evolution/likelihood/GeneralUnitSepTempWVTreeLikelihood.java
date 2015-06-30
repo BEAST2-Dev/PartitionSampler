@@ -67,7 +67,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             unitOrderMap.put(units[i],i);
         }
 
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment) m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment) dataInput.get();
         double[] logPs = new double[units.length];
         setModelParameterVals(modelParameters,modelCode,freqs);
 
@@ -129,7 +129,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
 
             for(int i = 0; i < rateCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(substModel, m_siteModel);
+                m_siteModel.substModelInput.setValue(substModel, m_siteModel);
                 ((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rates.get(i).getValue());
                 rateID = rates.get(i).getIDNumber();
                 setPatternWeights(clusterWeightsMap.get(rateID));
@@ -139,7 +139,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
                 ArrayList<Integer> sites = clusterSitesMap.get(rateID);
                 for(Integer site:sites){
                     unit = alignment.getUnitBySite(site);
-                    logPs[unitOrderMap.get(unit)] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[unitOrderMap.get(unit)] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 
@@ -165,7 +165,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             unitOrderMap.put(units[i],i);
         }
 
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment) m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment) dataInput.get();
         double[] logPs = new double[units.length];
         setModelParameterVals(modelParameters,modelCode,freqs);
 
@@ -246,7 +246,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
 
             for(int i = 0; i < rateCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(substModel, m_siteModel);
+                m_siteModel.substModelInput.setValue(substModel, m_siteModel);
                 //((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rates.get(i).getValue());
                 ((QuietGammaSiteBMA)m_siteModel).setMuValueQuietly(rates.get(i));
                 ((QuietGammaSiteBMA)m_siteModel).setShapeValueQuietly(alpha.get(i));
@@ -267,7 +267,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
                     //System.out.println("site: "+site);
                     unit = alignment.getUnitBySite(site);
                     //System.out.println("unit: "+unit);
-                    logPs[unitOrderMap.get(unit)] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[unitOrderMap.get(unit)] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 
@@ -307,7 +307,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             //System.out.println("units: "+units[i]);
             unitOrderMap.put(units[i], i);
         }
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment) m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment) dataInput.get();
 
         double[] logPs = new double[units.length];
 
@@ -367,7 +367,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
 
         for(int i = 0; i < substModelCount;i++){
 
-            m_siteModel.m_pSubstModel.setValue(ntdBMAMap.get(i), m_siteModel);
+            m_siteModel.substModelInput.setValue(ntdBMAMap.get(i), m_siteModel);
             ((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rateParameter.getValue());
             modelID = ntdBMAMap.get(i).getIDNumber();
             setPatternWeights(clusterWeightsMap.get(modelID));
@@ -377,7 +377,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             for(Integer site:sites){
                 unit = alignment.getUnitBySite(site);
                 //System.out.println("unit: "+unit);
-                logPs[unitOrderMap.get(unit)] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                logPs[unitOrderMap.get(unit)] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
             }
         }
         //System.out.println(logP);
@@ -429,7 +429,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             //System.out.println("units: "+units[i]);
             unitOrderMap.put(units[i], i);
         }
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment) m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment) dataInput.get();
 
         double[] logPs = new double[units.length];
 
@@ -489,7 +489,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
 
         for(int i = 0; i < substModelCount;i++){
 
-            m_siteModel.m_pSubstModel.setValue(ntdBMAMap.get(i), m_siteModel);
+            m_siteModel.substModelInput.setValue(ntdBMAMap.get(i), m_siteModel);
             //((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rateParameter.getValue());
             ((QuietGammaSiteBMA)m_siteModel).setMuValueQuietly(rate);
             ((QuietGammaSiteBMA)m_siteModel).setShapeValueQuietly(alpha);
@@ -505,7 +505,7 @@ public class GeneralUnitSepTempWVTreeLikelihood extends ExtendedSepTempWVTreeLik
             for(Integer site:sites){
                 unit = alignment.getUnitBySite(site);
                 //System.out.println("unit: "+unit);
-                logPs[unitOrderMap.get(unit)] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                logPs[unitOrderMap.get(unit)] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
             }
         }
         //System.out.println(logP);

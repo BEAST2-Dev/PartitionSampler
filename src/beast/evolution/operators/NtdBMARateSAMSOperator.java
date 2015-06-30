@@ -1,5 +1,6 @@
 package beast.evolution.operators;
 
+
 import beast.core.Input;
 import beast.core.Operator;
 import beast.core.parameter.*;
@@ -9,7 +10,6 @@ import beast.math.distributions.CompoundDirichletProcess;
 import beast.math.distributions.ConditionalCategoricalDistribution;
 import beast.math.distributions.ParametricDistribution;
 import beast.util.Randomizer;
-import org.apache.commons.math3.analysis.function.Logit;
 
 import java.util.HashMap;
 import java.util.List;
@@ -726,8 +726,8 @@ public class NtdBMARateSAMSOperator extends Operator {
             double[] lik1,
             double[] lik2) throws Exception{
 
-        int[] tempWeights = new int[tempLikelihood.m_data.get().getPatternCount()];
-        tempWeights[tempLikelihood.m_data.get().getPatternIndex(mergedClusterSites[shuffle[i]])] = 1;
+        int[] tempWeights = new int[tempLikelihood.dataInput.get().getPatternCount()];
+        tempWeights[tempLikelihood.dataInput.get().getPatternIndex(mergedClusterSites[shuffle[i]])] = 1;
         tempLikelihood.setPatternWeights(tempWeights);
         double temp1 = Math.exp(tempLikelihood.calculateLogP(
                 paramList.getParameter(clusterIndex1),

@@ -5,7 +5,7 @@ import beast.core.Operator;
 import beast.core.parameter.ParameterList;
 import beast.core.parameter.RealParameter;
 import beast.math.distributions.Wishart;
-import beast.math.matrixAlgebra1.Matrix;
+import beast.math.matrixAlgebra.Matrix;
 
 import java.lang.reflect.Array;
 

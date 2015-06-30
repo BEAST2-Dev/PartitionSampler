@@ -6,6 +6,7 @@ import beast.core.parameter.ChangeType;
 import beast.evolution.alignment.GeneralUnitAlignment;
 import beast.evolution.sitemodel.DPSiteModel;
 import beast.evolution.sitemodel.SiteModel;
+import beast.evolution.tree.Tree;
 import sun.java2d.loops.FillRect;
 
 /**
@@ -18,13 +19,13 @@ public class GeneralUnitDPTreeLikelihood extends DPTreeLikelihood {
         useThreads = useThreadsInput.get() && (BeastMCMC.m_nThreads > 1);
         useThreadsEvenly = useThreadsEvenlyInput.get() && (BeastMCMC.m_nThreads > 1);
         dpVal = dpValInput.get();
-        if(!(m_pSiteModel.get() instanceof DPSiteModel)){
+        if(!(siteModelInput.get() instanceof DPSiteModel)){
             throw new RuntimeException("DPSiteModel required for site model.");
         }
-        dpSiteModel = (DPSiteModel) m_pSiteModel.get();
+        dpSiteModel = (DPSiteModel) siteModelInput.get();
 
 
-        alignment = m_data.get();
+        alignment = dataInput.get();
         int patternCount = alignment.getPatternCount();
 
 
@@ -43,10 +44,10 @@ public class GeneralUnitDPTreeLikelihood extends DPTreeLikelihood {
             NewWVTreeLikelihood treeLik = new NewWVTreeLikelihood(
                     clusterWeights[i],
                     alignment,
-                    m_tree.get(),
+                    (Tree) treeInput.get(),
                     useAmbiguitiesInput.get(),
                     dpSiteModel.getSiteModel(i),
-                    m_pBranchRateModel.get());
+                    branchRateModelInput.get());
             treeLiks.add(treeLik);
 
         }
@@ -92,10 +93,10 @@ public class GeneralUnitDPTreeLikelihood extends DPTreeLikelihood {
         NewWVTreeLikelihood treeLik = new NewWVTreeLikelihood(
                 patternWeights,
                 alignment,
-                m_tree.get(),
+                (Tree) treeInput.get(),
                 useAmbiguitiesInput.get(),
                 siteModel,
-                m_pBranchRateModel.get());
+                branchRateModelInput.get());
         try{
 
             treeLik.calculateLogP();
@@ -231,10 +232,10 @@ public class GeneralUnitDPTreeLikelihood extends DPTreeLikelihood {
 
 
             recalculate = true;
-        }else if(m_tree.get().somethingIsDirty()){
+        }else if(treeInput.get().somethingIsDirty()){
             recalculate = true;
 
-        }else if(m_pBranchRateModel.get().isDirtyCalculation()){
+        }else if(branchRateModelInput.get().isDirtyCalculation()){
             recalculate = true;
         }
         if(recalculate){

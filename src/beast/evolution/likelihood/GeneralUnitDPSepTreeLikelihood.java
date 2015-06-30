@@ -7,6 +7,7 @@ import beast.evolution.alignment.GeneralUnitAlignment;
 import beast.evolution.sitemodel.DPNtdRateSepSiteModel;
 import beast.evolution.sitemodel.SiteModel;
 import beast.evolution.substitutionmodel.SwitchingNtdBMA;
+import beast.evolution.tree.Tree;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,12 +22,12 @@ public class GeneralUnitDPSepTreeLikelihood extends DPSepTreeLikelihood {
         useThreads = useThreadsInput.get() && (BeastMCMC.m_nThreads > 1);
         useThreadsEvenly = useThreadsEvenlyInput.get() && (BeastMCMC.m_nThreads > 1);
 
-        alignment = m_data.get();
+        alignment = dataInput.get();
         int patternCount = alignment.getPatternCount();
-        if(!(m_pSiteModel.get() instanceof DPNtdRateSepSiteModel)){
+        if(!(siteModelInput.get() instanceof DPNtdRateSepSiteModel)){
             throw new RuntimeException("DPNtdRateSepSiteModel required for site model.");
         }
-        dpSiteModel = (DPNtdRateSepSiteModel)m_pSiteModel.get();
+        dpSiteModel = (DPNtdRateSepSiteModel)siteModelInput.get();
         int siteModelCount = dpSiteModel.getSiteModelCount();
 
         /*
@@ -60,10 +61,10 @@ public class GeneralUnitDPSepTreeLikelihood extends DPSepTreeLikelihood {
             NewWVTreeLikelihood treeLik = new NewWVTreeLikelihood(
                     clusterWeights[ntdBMAId][ratesId],
                     alignment,
-                    m_tree.get(),
+                    (Tree) treeInput.get(),
                     useAmbiguitiesInput.get(),
                     dpSiteModel.getSiteModel(i),
-                    m_pBranchRateModel.get());
+                    branchRateModelInput.get());
 
             //Add to list and matrix for the convenience of processesing
             treeLiks.add(treeLik);
@@ -165,10 +166,10 @@ public class GeneralUnitDPSepTreeLikelihood extends DPSepTreeLikelihood {
         NewWVTreeLikelihood treeLik = new NewWVTreeLikelihood(
                     patternWeights,
                     alignment,
-                    m_tree.get(),
+                    (Tree) treeInput.get(),
                     useAmbiguitiesInput.get(),
                     siteModel,
-                    m_pBranchRateModel.get());
+                    branchRateModelInput.get());
         try{
 
 
@@ -216,10 +217,10 @@ public class GeneralUnitDPSepTreeLikelihood extends DPSepTreeLikelihood {
                 changeType = ChangeType.ALL;
             }
             recalculate = true;
-        }else if(m_tree.get().somethingIsDirty()){
+        }else if(treeInput.get().somethingIsDirty()){
             recalculate = true;
 
-        }else if(m_pBranchRateModel.get().isDirtyCalculation()){
+        }else if(branchRateModelInput.get().isDirtyCalculation()){
             recalculate = true;
         }
 

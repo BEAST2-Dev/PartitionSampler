@@ -21,7 +21,7 @@ public class ExtendedTempWVTreeLikelihood extends TempWVTreeLikelihood {
         double[] siteLogP = new double[sites.length];
         calculateLogP(modelParameters,modelCode,freqs,alpha, invPr,rate, siteModelIndicator);
         for(int i = 0; i < sites.length;i++){
-            siteLogP[i] = m_fPatternLogLikelihoods[m_data.get().getPatternIndex(sites[i])];
+            siteLogP[i] = patternLogLikelihoods[dataInput.get().getPatternIndex(sites[i])];
         }
         return siteLogP;
     }
@@ -36,7 +36,7 @@ public class ExtendedTempWVTreeLikelihood extends TempWVTreeLikelihood {
             RealParameter siteModelIndicator) throws Exception{
 
 
-        SwitchingNtdBMA substModel = (SwitchingNtdBMA)m_substitutionModel;
+        SwitchingNtdBMA substModel = (SwitchingNtdBMA)substitutionModel;
         (substModel.getLogKappa()).setValueQuietly(0, modelParameters.getValue(0));
         (substModel.getLogTN()).setValueQuietly(0,modelParameters.getValue(1));
         (substModel.getLogAC()).setValueQuietly(0,modelParameters.getValue(2));

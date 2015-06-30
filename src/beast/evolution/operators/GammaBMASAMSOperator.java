@@ -789,8 +789,8 @@ public class GammaBMASAMSOperator extends Operator {
             double[] lik2) throws Exception{
         //System.out.println("Hi!");
 
-        int[] tempWeights = new int[tempLikelihood.m_data.get().getPatternCount()];
-        tempWeights[tempLikelihood.m_data.get().getPatternIndex(mergedClusterSites[shuffle[i]])] = 1;
+        int[] tempWeights = new int[tempLikelihood.dataInput.get().getPatternCount()];
+        tempWeights[tempLikelihood.dataInput.get().getPatternIndex(mergedClusterSites[shuffle[i]])] = 1;
         tempLikelihood.setPatternWeights(tempWeights);
         double temp1 = Math.exp(tempLikelihood.calculateLogP(
                 alphaList.getParameter(clusterIndex1).getValue(),

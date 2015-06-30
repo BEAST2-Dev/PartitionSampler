@@ -23,7 +23,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
     public double[] calculateLogP (
             RealParameter rateParameter,
             int[] siteIndex) throws Exception{
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment)m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment)dataInput.get();
 
         double[] logPs = new double[siteIndex.length];
 
@@ -78,7 +78,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
 
             for(int i = 0; i < substModelCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(ntdBMAMap.get(i), m_siteModel);
+                m_siteModel.substModelInput.setValue(ntdBMAMap.get(i), m_siteModel);
                 ((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rateParameter.getValue());
                 modelID = ntdBMAMap.get(i).getIDNumber();
                 setPatternWeights(clusterWeightsMap.get(modelID));
@@ -87,7 +87,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
                 ArrayList<Integer> arrayIndex = clusterSitesMap.get(modelID);
                 for(Integer index:arrayIndex){
                     site = siteIndex[index];
-                    logPs[index] = m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[index] = patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 
@@ -129,7 +129,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
             RealParameter freqs,
             int[] siteIndex){
 
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment)m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment)dataInput.get();
         double[] logPs = new double[siteIndex.length];
         setModelParameterVals(modelParameters,modelCode,freqs);
 
@@ -182,7 +182,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
 
             for(int i = 0; i < rateCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(substModel, m_siteModel);
+                m_siteModel.substModelInput.setValue(substModel, m_siteModel);
                 ((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rates.get(i).getValue());
                 rateID = rates.get(i).getIDNumber();
                 setPatternWeights(clusterWeightsMap.get(rateID));
@@ -191,7 +191,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
                 ArrayList<Integer> arrayIndex = clusterSitesMap.get(rateID);
                 for(Integer index:arrayIndex){
                     site = siteIndex[index];
-                    logPs[index] = m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[index] = patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 
@@ -211,7 +211,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
         System.out.println("modelCode: "+modelCode);
         System.out.println("freqs: "+freqs); */
 
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment)m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment)dataInput.get();
         double[] logPs = new double[siteIndex.length];
         setModelParameterVals(modelParameters,modelCode,freqs);
 
@@ -281,7 +281,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
 
             for(int i = 0; i < rateCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(substModel, m_siteModel);
+                m_siteModel.substModelInput.setValue(substModel, m_siteModel);
                 ((QuietGammaSiteBMA)m_siteModel).setMuValueQuietly(rates.get(i));
                 ((QuietGammaSiteBMA)m_siteModel).setShapeValueQuietly(alpha.get(i));
                 ((QuietGammaSiteBMA)m_siteModel).setInvPrValueQuietly(invPr.get(i));
@@ -301,7 +301,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
                 ArrayList<Integer> arrayIndex = clusterSitesMap.get(rateIDs.get(i));
                 for(Integer index:arrayIndex){
                     site = siteIndex[index];
-                    logPs[index] = m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[index] = patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 
@@ -323,7 +323,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
             double siteModelChoice,
             int[] siteIndex) throws Exception{
 
-        GeneralUnitAlignment alignment = (GeneralUnitAlignment)m_data.get();
+        GeneralUnitAlignment alignment = (GeneralUnitAlignment)dataInput.get();
 
         double[] logPs = new double[siteIndex.length];
 
@@ -378,7 +378,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
 
             for(int i = 0; i < substModelCount;i++){
 
-                m_siteModel.m_pSubstModel.setValue(ntdBMAMap.get(i), m_siteModel);
+                m_siteModel.substModelInput.setValue(ntdBMAMap.get(i), m_siteModel);
                 //((DummySiteModel)m_siteModel).getRateParameter().setValueQuietly(0,rateParameter.getValue());
                 ((QuietGammaSiteBMA)m_siteModel).setMuValueQuietly(rate);
                 ((QuietGammaSiteBMA)m_siteModel).setShapeValueQuietly(alpha);
@@ -393,7 +393,7 @@ public class ExtendedSepTempWVTreeLikelihood extends SepTempWVTreeLikelihood{
                 ArrayList<Integer> arrayIndex = clusterSitesMap.get(modelID);
                 for(Integer index:arrayIndex){
                     site = siteIndex[index];
-                    logPs[index] = m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)] ;
+                    logPs[index] = patternLogLikelihoods[dataInput.get().getPatternIndex(site)] ;
                 }
             }
 

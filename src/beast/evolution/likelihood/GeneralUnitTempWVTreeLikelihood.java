@@ -37,7 +37,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
         for(int i = 0; i < units.length; i++){
             int[] sites = alignment.getSitesByUnit(units[i]);
             for(int site:sites){
-                siteLogP[i] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                siteLogP[i] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
             }
         }
         return siteLogP;
@@ -61,7 +61,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
                     //System.out.println(sites[i] +" "+exceptSite);
                     int[] sites = alignment.getSitesByUnit(units[i]);
                     for(int site:sites){
-                        siteLogP[k] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                        siteLogP[k] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
                     }
                     k++;
                 }
@@ -77,13 +77,13 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
     }
 
     public void setupPatternWeightsFromSites(int[] units){
-        int[] tempWeights = new int[m_data.get().getPatternCount()];
+        int[] tempWeights = new int[dataInput.get().getPatternCount()];
         int patIndex;
 
         for(int i = 0; i < units.length; i++){
             int[] sites = ((GeneralUnitAlignment)data).getSitesByUnit(units[i]);
             for(int j = 0; j < sites.length; j++){
-                patIndex = m_data.get().getPatternIndex(sites[j]);
+                patIndex = dataInput.get().getPatternIndex(sites[j]);
                 tempWeights[patIndex] = 1;
             }
         }
@@ -110,7 +110,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
                 if(units[i] != exceptUnit){
                     int[] sites = alignment.getSitesByUnit(units[i]);
                     for(int site:sites){
-                        siteLogP[k] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                        siteLogP[k] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
                     }
                     k++;
                 }
@@ -137,7 +137,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
             for(int i = 0; i < units.length;i++){
                 int[] sites = alignment.getSitesByUnit(units[i]);
                 for(int site:sites){
-                    siteLogP[k] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                    siteLogP[k] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
                 }
                 k++;
                 //System.out.println(siteLogP[i]);
@@ -163,7 +163,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
                 if(units[i] != exceptUnit){
                     int[] sites = alignment.getSitesByUnit(units[i]);
                     for(int site:sites){
-                        siteLogP[k] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                        siteLogP[k] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
                     }
                     k++;
                 }
@@ -201,7 +201,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
         for(int i = 0; i < units.length; i++){
             int[] sites = alignment.getSitesByUnit(units[i]);
             for(int site:sites){
-                siteLogP[i] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                siteLogP[i] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
             }
         }
         return siteLogP;
@@ -237,7 +237,7 @@ public class GeneralUnitTempWVTreeLikelihood extends ExtendedTempWVTreeLikelihoo
                     //System.out.println(sites[i] +" "+exceptSite);
                     int[] sites = alignment.getSitesByUnit(units[i]);
                     for(int site:sites){
-                        siteLogP[k] += m_fPatternLogLikelihoods[m_data.get().getPatternIndex(site)];
+                        siteLogP[k] += patternLogLikelihoods[dataInput.get().getPatternIndex(site)];
                     }
                     k++;
                 }

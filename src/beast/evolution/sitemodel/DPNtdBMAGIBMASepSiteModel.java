@@ -116,7 +116,7 @@ public class DPNtdBMAGIBMASepSiteModel extends DPNtdRateSepSiteModel {
     /*
      * Handles changes in pointers that does not involve changes in the number of clusters
      */
-    protected void handlePointerChange(int lastDirtySite) throws Exception{
+    public void handlePointerChange(int lastDirtySite) throws Exception{
 
         //Previous cluster ids of the last dirty site
         int prevNtdBMAIdNum = clusterMap[NTDBMA][lastDirtySite];
